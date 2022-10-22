@@ -1,4 +1,4 @@
-from assets import ChessBoard, Player
+from chess import UnicodeChessBoard, Player, ChessGame
 import time
 
 def flirt_init_sequence():
@@ -21,16 +21,20 @@ def init_sequence():
     return p1_name, p2_name
 
 def main():
-    chessboard = ChessBoard()
+    #chessboard = UnicodeChessBoard()
     p1_name, p2_name = init_sequence()
-    p1 = Player(p1_name)
-    p2 = Player(p2_name)
+    p1 = Player(p1_name, "white")
+    p2 = Player(p2_name, "black")
 
-    session_active = True
-    while session_active:
-        chessboard.render_board()
-        p1_move = p1.specify_move()
-        move_valid = chessboard.make_move(p1_move, 1) 
+    game = ChessGame(p1, p2)
+    game._frontend.display_state()
+
+    #session_active = True
+    #while session_active:
+        #chessboard.render_board()
+        #p1_move = p1.specify_move()
+        #move_valid = chessboard.make_move(p1_move, 1) 
+        
 
 
 if __name__ == "__main__":
