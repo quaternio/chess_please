@@ -1,2 +1,2 @@
 # chess_please
-Chess, but awesome
+Chess, but awesome :smirk:
