@@ -39,3 +39,11 @@ class ChessGame:
 
         # Initialize the frontend
         self._frontend = ChessFEUnicode(self._backend.game_state)
+        self._frontend.display_state()
+        self._white_turn = True
+
+    def move(self):
+        pos1, pos2 = self._frontend.player_turn(self._white_turn)
+        is_valid = self._backend.move_valid(pos1, pos2)
+        
+        self._white_turn = not self._white_turn

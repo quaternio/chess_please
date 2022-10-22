@@ -1,3 +1,4 @@
+from operator import is_
 from pieces import UnicodePieces, Piece
 
 
@@ -5,6 +6,10 @@ class ChessBoard:
     """Holds game state."""
     def __init__(self):
         self._board = self.initialize_board()
+
+    @property
+    def board(self):
+        return self._board
 
     def initialize_board(self) -> dict:
         """Initializes chess board.
@@ -35,9 +40,15 @@ class ChessBoard:
         
         return board
 
-    @property
-    def board(self):
-        return self._board
+    def move_piece(self, pos1: str, pos2: str) -> None:
+        """Change the board's state as specified.
+
+        Args:
+            pos1 (str): Position of piece to be moved
+            pos2 (str): Destination of piece to be moved
+        """
+        pass
+    
 
 class ChessFE:
     def __init__(self, state=None):
@@ -84,3 +95,12 @@ class ChessFEUnicode(ChessFE):
             print("\n")
         else:
             print("No state to display")
+
+    def player_turn(self, is_white_turn):
+        player = "Player 1" if is_white_turn else "Player 2"
+        move = input(f"{player}, it's your move.")
+        positions = [pos.strip() for pos in move.split(',')]
+        pos1 = positions[0]
+        pos2 = positions[1]
+
+        return pos1, pos2
