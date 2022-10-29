@@ -18,7 +18,7 @@ class ChessEngine:
         Returns:
             is_valid (bool): True if move is valid
         """
-        pass
+        return True
 
     def make_move(self, p1: str, p2: str) -> Type[Piece]:
         pass
@@ -45,5 +45,9 @@ class ChessGame:
     def move(self):
         pos1, pos2 = self._frontend.player_turn(self._white_turn)
         is_valid = self._backend.move_valid(pos1, pos2)
-        
+
+        if is_valid:
+            # Update internal state after command is verified
+            self._frontend._state.move_piece(pos1, pos2)
+
         self._white_turn = not self._white_turn

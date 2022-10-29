@@ -47,7 +47,11 @@ class ChessBoard:
             pos1 (str): Position of piece to be moved
             pos2 (str): Destination of piece to be moved
         """
-        pass
+        p1, p2 = list(pos1), list(pos2)
+        p1_col, p1_row = p1
+        p2_col, p2_row = p2
+        self._board[p2_row][p2_col] = self._board[p1_row][p1_col]
+        self._board[p1_row][p1_col] = Piece.EMPTY
     
 
 class ChessFE:
@@ -98,7 +102,7 @@ class ChessFEUnicode(ChessFE):
 
     def player_turn(self, is_white_turn):
         player = "Player 1" if is_white_turn else "Player 2"
-        move = input(f"{player}, it's your move.")
+        move = input(f"{player}, it's your move.\n")
         positions = [pos.strip() for pos in move.split(',')]
         pos1 = positions[0]
         pos2 = positions[1]

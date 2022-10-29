@@ -27,6 +27,11 @@ def main():
 
     game = ChessGame(p1, p2)
     game._frontend.display_state()
+
+    # Prompts player 1 (white) to move
+    # and displays the updated board
+    game.move()
+    game._frontend.display_state()
         
 
 if __name__ == "__main__":
