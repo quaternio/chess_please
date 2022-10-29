@@ -26,12 +26,13 @@ def main():
     p2 = Player(p2_name, "black")
 
     game = ChessGame(p1, p2)
-    game._frontend.display_state()
+    #game._frontend.display_state()
 
     # Prompts player 1 (white) to move
     # and displays the updated board
-    game.move()
-    game._frontend.display_state()
+
+    while True:
+        game.move()
         
 
 if __name__ == "__main__":

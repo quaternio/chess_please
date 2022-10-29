@@ -1,5 +1,6 @@
 from operator import is_
 from pieces import UnicodePieces, Piece
+from typing import Tuple
 
 
 class ChessBoard:
@@ -47,11 +48,17 @@ class ChessBoard:
             pos1 (str): Position of piece to be moved
             pos2 (str): Destination of piece to be moved
         """
-        p1, p2 = list(pos1), list(pos2)
-        p1_col, p1_row = p1
-        p2_col, p2_row = p2
-        self._board[p2_row][p2_col] = self._board[p1_row][p1_col]
-        self._board[p1_row][p1_col] = Piece.EMPTY
+        p1c1, p1c2 = self.unpack_move_string(pos1)
+        p2c1, p2c2 = self.unpack_move_string(pos2)
+        self._board[p2c1][p2c2] = self._board[p1c1][p1c2]
+        self._board[p1c1][p1c2] = Piece.EMPTY
+
+    def unpack_move_string(self, pos: str) -> Tuple[str,str]:
+        idxs = list(pos)
+        return idxs[1], idxs[0]
+
+    def pack_move_string(self, r_idx: str, c_idx: str) -> str:
+        return ''.join((c_idx, r_idx))
     
 
 class ChessFE:
