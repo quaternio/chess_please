@@ -10,4 +10,5 @@ Chess, but awesome :smirk:
     - Queen
     - King
 
-- Associate valid moves with player color
+- Validate piece colors during moves :check:
+- Eliminate ability to move empty piece :check:
