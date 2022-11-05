@@ -22,7 +22,10 @@ class ChessEngine:
         self._white = {Piece.WROOK, Piece.WKNIGHT, Piece.WBISHOP, 
                        Piece.WQUEEN, Piece.WKING, Piece.WPAWN}
 
-    def move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
+    def move_implications(self, 
+                          p1: str, 
+                          p2: str, 
+                          white_turn: bool) -> List[Tuple[str,str]]:
         """Computes the implications of a specified move
 
         Args:
@@ -41,14 +44,23 @@ class ChessEngine:
         consequences = []
         p1num, p1letter = self._chess_board.unpack_move_string(p1)
         p2num, p2letter = self._chess_board.unpack_move_string(p2)
-
-        valid  = ord(p1num)    <= ord('8') and ord(p1num)    >= ord('1')
-        valid &= ord(p2num)    <= ord('8') and ord(p2num)    >= ord('1')
-        valid &= ord(p1letter) <= ord('h') and ord(p1letter) >= ord('a')
-        valid &= ord(p2letter) <= ord('h') and ord(p2letter) >= ord('a')
-
         src_piece  = self._chess_board.board[p1num][p1letter]
-    
+
+        # Checking bounds of move indices
+        bounds_correct  = ord(p1num)    <= ord('8') and ord(p1num)    >= ord('1')
+        bounds_correct &= ord(p2num)    <= ord('8') and ord(p2num)    >= ord('1')
+        bounds_correct &= ord(p1letter) <= ord('h') and ord(p1letter) >= ord('a')
+        bounds_correct &= ord(p2letter) <= ord('h') and ord(p2letter) >= ord('a')
+
+        # Checking that the player isn't attempting to move an empty piece
+        non_empty = src_piece != Piece.EMPTY
+
+        # Checking that the player only moves pieces belonging to his color
+        color_correct  = white_turn and src_piece in self._white
+        color_correct |= not white_turn and src_piece not in self._white
+
+        valid = bounds_correct and non_empty and color_correct
+
         if valid:
             consequences = self._piece_fn_map[src_piece](p1, p2)
 
@@ -166,7 +178,7 @@ class ChessGame:
 
         while not is_valid:
             pos1, pos2 = self._frontend.player_turn(self._white_turn)
-            consequences = self._backend.move_implications(pos1, pos2)
+            consequences = self._backend.move_implications(pos1, pos2, self._white_turn)
 
             # If the number of consequences is nonzero, then valid move.
             is_valid = len(consequences) != 0
