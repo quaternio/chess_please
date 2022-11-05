@@ -3,7 +3,7 @@ Chess, but awesome :smirk:
 
 `//TODO`
 - Validate proposed moves in chess engine.
-    - Pawn
+    - Pawn :white_check_mark:
     - Rook :white_check_mark:
     - Knight
     - Bishop
