@@ -186,13 +186,115 @@ class ChessEngine:
         return consequences
 
     def knight_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
-        pass
+        p1num, p1letter = self._chess_board.unpack_move_string(p1)
+        p2num, p2letter = self._chess_board.unpack_move_string(p2)
+
+        consequences = []
+
+        row_diff = abs(ord(p1num) - ord(p2num))
+        col_diff = abs(ord(p1letter) - ord(p2letter))
+
+        dest_piece = self._chess_board.board[p2num][p2letter]
+        dest_piece_empty = dest_piece == Piece.EMPTY
+
+        source_color = "white" if self._white_turn else "black"
+        dest_color = "white" if dest_piece in self._white else "black"
+
+        valid_move = row_diff == 1 and col_diff == 2
+        valid_move |= row_diff == 2 and col_diff == 1
+
+        if not dest_piece_empty:
+            valid_move &= dest_color != source_color
+
+        capture = not dest_piece_empty
+        capture &= dest_piece not in self._white if self._white_turn else dest_piece in self._white
+
+        if valid_move:
+            consequences.append((p1,p2))
+            if capture:
+                consequences.append((p2,None))
+
+        return consequences
 
     def bishop_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
-        pass
+        p1num, p1letter = self._chess_board.unpack_move_string(p1)
+        p2num, p2letter = self._chess_board.unpack_move_string(p2)
+
+        consequences = []
+
+        row_diff = ord(p2num) - ord(p1num)
+        col_diff = ord(p2letter) - ord(p1letter)
+
+        diagonal = abs(row_diff) == abs(col_diff)
+        is_obstructed = self.diag_is_obstructed(p1num, p1letter, p2num, p2letter)
+
+        if diagonal and not is_obstructed:
+            dest_piece = self._chess_board.board[p2num][p2letter]
+            dest_piece_empty = dest_piece == Piece.EMPTY
+
+            if dest_piece_empty:
+                consequences.append((p1,p2))
+            else:
+                capture = self._white_turn and dest_piece not in self._white
+                capture |= not self._white_turn and dest_piece in self._white
+
+                if capture:
+                    consequences.append((p1,p2))
+                    consequences.append((p2,None))
+
+        return consequences
 
     def queen_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
-        return [(p1,p2)]
+        p1num, p1letter = self._chess_board.unpack_move_string(p1)
+        p2num, p2letter = self._chess_board.unpack_move_string(p2)
+
+        consequences = []
+
+        row_diff = ord(p2num) - ord(p1num)
+        col_diff = ord(p2letter) - ord(p1letter)
+
+        diagonal = abs(row_diff) == abs(col_diff)
+        same_row = p1num == p2num
+        same_col = p1letter == p2letter
+
+        if diagonal:
+            is_obstructed = self.diag_is_obstructed(p1num, p1letter, p2num, p2letter)
+            if not is_obstructed:
+                dest_piece = self._chess_board.board[p2num][p2letter]
+                dest_piece_empty = dest_piece == Piece.EMPTY
+
+                if dest_piece_empty:
+                    consequences.append((p1,p2))
+                else:
+                    capture = self._white_turn and dest_piece not in self._white
+                    capture |= not self._white_turn and dest_piece in self._white
+
+                    if capture:
+                        consequences.append((p1,p2))
+                        consequences.append((p2,None))
+
+        elif same_row or same_col:
+            is_obstructed = self.straight_is_obstructed(p1num, p1letter, p2num, p2letter)
+            if not is_obstructed:
+                # Dealing with source piece and destination piece validation
+                source_piece = self._chess_board.board[p1num][p1letter]
+                dest_piece = self._chess_board.board[p2num][p2letter]
+                
+                source_color = "white" if source_piece in self._white else "black"
+
+                # If there is a piece in the destination position
+                if dest_piece != Piece.EMPTY:
+                    dest_color = "white" if dest_piece in self._white else "black"
+
+                    if dest_color != source_color:
+                        # Eliminate piece
+                        consequences.append((p2,None))
+                        consequences.append((p1,p2))
+                
+                else:
+                    consequences.append((p1,p2))
+
+        return consequences
 
     def king_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
         pass
@@ -220,6 +322,33 @@ class ChessEngine:
             for rkey in range(start+1, stop):
                 row_key = chr(rkey)
                 if self._chess_board.board[row_key][chr(p1char)] != Piece.EMPTY:
+                    obstructed = True
+
+        return obstructed
+
+    def diag_is_obstructed(self, p1n: str, p1l: str, p2n: str, p2l: str) -> bool:
+        p1num, p2num, = ord(p1n), ord(p2n)
+        p1char, p2char = ord(p1l), ord(p2l)
+
+        row_diff = p2num - p1num
+
+        obstructed = False
+
+        start_col = min(p1char, p2char)
+        start_row = p1num if start_col == p1char else p2num
+        stop_row = p2num if start_row == p1num else p1num
+
+        row_pos = stop_row - start_row > 0
+        for i in range(1,abs(row_diff)):
+            if row_pos:
+                row_key = chr(start_row + i)
+                col_key = chr(start_col + i)
+                if self._chess_board.board[row_key][col_key] != Piece.EMPTY:
+                    obstructed = True
+            else:
+                row_key = chr(start_row - i)
+                col_key = chr(start_col + i)
+                if self._chess_board.board[row_key][col_key] != Piece.EMPTY:
                     obstructed = True
 
         return obstructed
