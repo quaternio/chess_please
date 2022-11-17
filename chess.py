@@ -24,6 +24,8 @@ class ChessEngine:
         self._last_white_move = []
         self._last_black_move = []
         self._white_turn = None
+        self._white_king_pos = 'e1'
+        self._black_king_pos = 'e8'
 
     def move_implications(self, 
                           p1: str, 
@@ -37,13 +39,14 @@ class ChessEngine:
 
         Returns:
             consequences (List[Tuple[str, str]]): A list of move consequences.
-                A consequence can be of three types: a piece capture, a 
-                movement, or a promotion. A piece capture is encoded as a 
+                A consequence can be of four types: a piece capture, a 
+                movement, a promotion, or a check. A piece capture is encoded as a 
                 (str, None) tuple where str specifies captured piece position. 
                 Another type is a movement which is encoded as a 
-                (str, str) tuple. Finally, a promotion is encoded as 
-                a (None, str) tuple. If the consequences list is empty, this 
-                implies that the move is not valid.
+                (str, str) tuple. A promotion is encoded as 
+                a (None, str) tuple. Finally, a check is encoded as a 
+                (None, None) tuple. If the consequences list is empty, this 
+                implies that the move is not valid. 
         """
         consequences = []
         p1num, p1letter = self._chess_board.unpack_move_string(p1)
@@ -74,13 +77,43 @@ class ChessEngine:
             consequences = self._piece_fn_map[src_piece](p1, p2)
 
             # Important to store last move info for en passant
-            if white_turn:
+            if self._white_turn:
+                # Check for check
+                movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
+                for movement in movements:
+                    print(f"source pos: {movement[1]}")
+                    in_check_cons = self._piece_fn_map[src_piece](movement[1], self._black_king_pos)
+                    print("in check consequences: ", in_check_cons)
+                    captures = filter(lambda item: item[0] is not None and item[1] is None, in_check_cons)
+                    captures = list(captures)
+                    print("captures: ", captures)
+                    print("len(list(captures)): ", len(captures))
+                    if len(captures) > 0:
+                        print("check")
+                        consequences.append((None,None))
+                
                 self._last_white_move = consequences
             else:
+                # Check for check
+                movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
+                for movement in movements:
+                    print(f"source pos: {movement[1]}")
+                    in_check_cons = self._piece_fn_map[src_piece](movement[1], self._white_king_pos)
+                    print("in check consequences: ", in_check_cons)
+                    captures = filter(lambda item: item[0] is not None and item[1] is None, in_check_cons)
+                    captures = list(captures)
+                    print("captures: ", captures)
+                    print("len(list(captures)): ", len(captures))
+                    if len(captures) > 0:
+                        print("check")
+                        consequences.append((None,None))
+
                 self._last_black_move = consequences
 
         print(self._last_white_move)
         print(self._last_black_move)
+
+        print("consequences: ", consequences)
 
         return consequences
 
@@ -470,6 +503,8 @@ class ChessGame:
             captures  = filter(lambda item: item[0] is not None and item[1] is None, consequences)
             movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
             promotions = filter(lambda item: item[0] is None and item[1] is not None, consequences)
+            check = list(filter(lambda item: item[0] is None and item[1] is None, consequences))
+            in_check = len(check) > 0
 
             # We apply captures before making moves.
             for capture in captures:
@@ -486,6 +521,12 @@ class ChessGame:
             for promotion in promotions:
                 updated_piece = self._frontend.promotion(self._white_turn)
                 self._backend.promote(promotion[1], updated_piece)
+
+            # TODO: Clean this up; figure out what right thing to do is when in check.
+            #       could maybe pass check in as an arg to make move. Then if not moving
+            #       king out of check or eliminating threat, move invalid.
+            if in_check:
+                self._frontend.notify_check(self._white_turn)
 
             self._frontend.display_state()
             # print(self._captured_pieces)

@@ -182,4 +182,9 @@ class ChessFEUnicode(ChessFE):
         new_piece_str = input(prompt)
         return self._promotion_str_to_piece(new_piece_str, is_white_turn)
 
+    def notify_check(self, is_white_turn):
+        other_player = "Player 2" if is_white_turn else "Player 1"
+        prompt1 = f"\n{other_player}, your king is in check."
+        print(prompt1)
+
     

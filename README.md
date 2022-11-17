@@ -14,3 +14,6 @@ Chess, but awesome :smirk:
 - Eliminate ability to move empty piece :white_check_mark:
 - Gracefully handle invalid move strings
 - Determine check/check-mate mechanics
+    - Detect if in check after other player's turn :white_check_mark:
+    - Make moves jeopardizing king invalid
+        - NOTE: If no move exists that keeps the king safe, then checkmate
