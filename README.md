@@ -15,5 +15,5 @@ Chess, but awesome :smirk:
 - Gracefully handle invalid move strings
 - Determine check/check-mate mechanics
     - Detect if in check after other player's turn :white_check_mark:
-    - Make moves jeopardizing king invalid
-        - NOTE: If no move exists that keeps the king safe, then checkmate
+    - Make moves jeopardizing king invalid :white_check_mark:
+    - If no move exists that keeps the king safe, then checkmate

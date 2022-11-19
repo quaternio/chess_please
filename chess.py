@@ -110,6 +110,9 @@ class ChessEngine:
 
                 self._last_black_move = consequences
 
+        if self.jeopardizes_king(consequences):
+            consequences = []
+
         print(self._last_white_move)
         print(self._last_black_move)
 
@@ -330,7 +333,7 @@ class ChessEngine:
         return consequences
 
     def king_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
-        pass
+        return []
 
     def straight_is_obstructed(self, p1n: str, p1l: str, p2n: str, p2l: str) -> bool:
         p1num, p2num, = ord(p1n), ord(p2n)
@@ -372,16 +375,24 @@ class ChessEngine:
         stop_row = p2num if start_row == p1num else p1num
 
         row_pos = stop_row - start_row > 0
+        print("row_diff, ", row_diff)
+        print("start_row, ", chr(start_row))
+        print("stop_row, ", chr(stop_row))
+        print("start_col, ", chr(start_col))
         for i in range(1,abs(row_diff)):
             if row_pos:
                 row_key = chr(start_row + i)
                 col_key = chr(start_col + i)
-                if self._chess_board.board[row_key][col_key] != Piece.EMPTY:
+                in_bounds  = row_key in self._chess_board.rows
+                in_bounds &= col_key in self._chess_board.cols
+                if in_bounds and self._chess_board.board[row_key][col_key] != Piece.EMPTY:
                     obstructed = True
             else:
                 row_key = chr(start_row - i)
                 col_key = chr(start_col + i)
-                if self._chess_board.board[row_key][col_key] != Piece.EMPTY:
+                in_bounds  = row_key in self._chess_board.rows
+                in_bounds &= col_key in self._chess_board.cols
+                if in_bounds and self._chess_board.board[row_key][col_key] != Piece.EMPTY:
                     obstructed = True
 
         return obstructed
@@ -434,6 +445,54 @@ class ChessEngine:
                         captured_piece = self._chess_board.pack_move_string(lw2num, lw2letter)
 
         return captured_piece
+
+    def jeopardizes_king(self, consequences):
+        jeopardizes_king = False
+        movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
+        movements = list(movements)
+
+        # Execute moves
+        for movement in movements:
+            self.make_move(movement[0], movement[1])
+
+        # Make checks
+        rows = self._chess_board.rows
+        cols = self._chess_board.cols
+        for num in rows:
+            for letter in cols:
+                if num == '5' and letter == 'a':
+                    print("got here")
+                piece = self._chess_board.board[num][letter]
+                if piece != Piece.EMPTY:
+                    # If it's white's turn
+                    if self._white_turn:
+                        if piece not in self._white:
+                            # Toggle turn to make hypothetical moves
+                            self._white_turn = not self._white_turn
+                            conseqs = self._piece_fn_map[piece](''.join([letter,num]), self._white_king_pos)
+                            self._white_turn = not self._white_turn
+                            
+                            captures = filter(lambda item: item[0] is not None and item[1] is None, conseqs)
+                            captures = list(captures)
+                            if len(captures) > 0:
+                                jeopardizes_king = True
+                    else:
+                        if piece in self._white:
+                            # Toggle turn to make hypothetical moves
+                            self._white_turn = not self._white_turn
+                            conseqs = self._piece_fn_map[piece](''.join([letter,num]), self._black_king_pos)
+                            self._white_turn = not self._white_turn
+
+                            captures = filter(lambda item: item[0] is not None and item[1] is None, conseqs)
+                            captures = list(captures)
+                            if len(captures) > 0:
+                                jeopardizes_king = True
+
+        # Undo moves
+        for movement in movements:
+            self.make_move(movement[1], movement[0])
+
+        return jeopardizes_king
 
     def remove_piece(self, pos: str) -> None:
         """Remove piece at specified position from game board.

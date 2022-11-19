@@ -6,11 +6,21 @@ from typing import Tuple
 class ChessBoard:
     """Holds game state."""
     def __init__(self):
+        self._rows = ['1', '2', '3', '4', '5', '6', '7', '8']
+        self._cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self._board, self._has_moved = self.initialize_board()
 
     @property
     def board(self):
         return self._board
+
+    @property
+    def rows(self):
+        return self._rows
+
+    @property
+    def cols(self):
+        return self._cols
 
     def initialize_board(self) -> dict:
         """Initializes chess board.
@@ -22,8 +32,8 @@ class ChessBoard:
                       Piece.BKING, Piece.BBISHOP, Piece.BKNIGHT, Piece.BROOK]
         w_init_seq = [Piece.WROOK, Piece.WKNIGHT, Piece.WBISHOP, Piece.WQUEEN, 
                       Piece.WKING, Piece.WBISHOP, Piece.WKNIGHT, Piece.WROOK]
-        rows = ['1', '2', '3', '4', '5', '6', '7', '8']
-        cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        rows = self._rows
+        cols = self._cols
         board = {}
         has_moved = {}
         for i in rows:
