@@ -8,7 +8,7 @@ Chess, but awesome :smirk:
     - Knight :white_check_mark:
     - Bishop :white_check_mark:
     - Queen :white_check_mark:
-    - King
+    - King :white_check_mark:
 
 - Validate piece colors during moves :white_check_mark:
 - Eliminate ability to move empty piece :white_check_mark:

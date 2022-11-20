@@ -333,7 +333,82 @@ class ChessEngine:
         return consequences
 
     def king_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
-        return []
+        # Need to handle castling and normal king translations
+        p1num, p1letter = self._chess_board.unpack_move_string(p1)
+        p2num, p2letter = self._chess_board.unpack_move_string(p2)
+
+        consequences = []
+
+        row_diff = abs(ord(p1num) - ord(p2num))
+        col_diff = abs(ord(p1letter) - ord(p2letter))
+
+        castling = False
+        if col_diff == 2:
+            castling_conseq = self.castling_consequences(p1, p2)
+            consequences = castling_conseq
+        else:
+            dest_piece = self._chess_board.board[p2num][p2letter]
+        
+            if self._white_turn:
+                dest_is_enemy = dest_piece not in self._white and dest_piece != Piece.EMPTY
+            else:
+                dest_is_enemy = dest_piece in self._white
+
+            move_valid  = row_diff in {0,1} and col_diff in {0,1}
+            move_valid &= row_diff + col_diff in {1,2}
+
+            if move_valid:
+                if dest_piece == Piece.EMPTY:
+                    consequences.append((p1, p2))
+                elif dest_is_enemy:
+                    consequences.append((p1,p2))
+                    consequences.append((p2, None))
+
+        return consequences
+
+    def castling_consequences(self, p1: str, p2: str) -> bool:
+        '''Assumes that king is attempting to move 2 laterally'''
+        p1num, p1letter = self._chess_board.unpack_move_string(p1)
+        p2num, p2letter = self._chess_board.unpack_move_string(p2)
+
+        castling = False
+        consequences = []
+
+        king_in_initial = not self._chess_board.has_moved(p1)
+        if king_in_initial:
+            if ord(p1letter) < ord(p2letter): # (King is castling right)
+                if self._white_turn:
+                    rook_pos = 'h1'
+                    rook_in_initial = not self._chess_board.has_moved(rook_pos)
+                    path_obstructed = self.straight_is_obstructed(p1num, p1letter, '1', 'h')
+                    if rook_in_initial and not path_obstructed:
+                        consequences.append((p1, p2))
+                        consequences.append(('h1', 'f1'))
+                else:
+                    rook_pos = 'h8'
+                    rook_in_initial = not self._chess_board.has_moved(rook_pos)
+                    path_obstructed = self.straight_is_obstructed(p1num, p1letter, '8', 'h')
+                    if rook_in_initial and not path_obstructed:
+                        consequences.append((p1, p2))
+                        consequences.append(('h8', 'f8'))
+            else: # (King is castling left)
+                if self._white_turn:
+                    rook_pos = 'a1'
+                    rook_in_initial = not self._chess_board.has_moved(rook_pos)
+                    path_obstructed = self.straight_is_obstructed(p1num, p1letter, '1', 'a')
+                    if rook_in_initial and not path_obstructed:
+                        consequences.append((p1, p2))
+                        consequences.append(('a1', 'd1'))
+                else:
+                    rook_pos = 'a8'
+                    rook_in_initial = not self._chess_board.has_moved(rook_pos)
+                    path_obstructed = self.straight_is_obstructed(p1num, p1letter, '8', 'a')
+                    if rook_in_initial and not path_obstructed:
+                        consequences.append((p1, p2))
+                        consequences.append(('a8', 'd8'))
+
+        return consequences
+
 
     def straight_is_obstructed(self, p1n: str, p1l: str, p2n: str, p2l: str) -> bool:
         p1num, p2num, = ord(p1n), ord(p2n)
