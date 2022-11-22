@@ -31,8 +31,14 @@ def main():
     # Prompts player 1 (white) to move
     # and displays the updated board
 
-    while True:
-        game.move()
+    checkmate = False
+    while not checkmate:
+        checkmate, is_white_turn = game.move()
+
+    if is_white_turn:
+        print(f"Congratulations, {p1_name}, you've won!")
+    else:
+        print(f"Congratulations, {p2_name}, you've won!")
         
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
+from math import hypot
 from frontend import ChessBoard, ChessFEUnicode
 from pieces import Piece
 from agents import Player
 from typing import Type, List, Tuple
+import copy
 
 class ChessEngine:
     """The backend of the chess game. Encodes all of the chess rules."""
@@ -49,6 +51,7 @@ class ChessEngine:
                 implies that the move is not valid. 
         """
         consequences = []
+        check_mate = False
         p1num, p1letter = self._chess_board.unpack_move_string(p1)
         p2num, p2letter = self._chess_board.unpack_move_string(p2)
         src_piece  = self._chess_board.board[p1num][p1letter]
@@ -75,13 +78,25 @@ class ChessEngine:
             self._white_turn = white_turn
 
             consequences = self._piece_fn_map[src_piece](p1, p2)
+            check = False
+
+            if self._white_turn:
+                if src_piece == Piece.WKING:
+                    self._white_king_pos = p2
+            else:
+                if src_piece == Piece.BKING:
+                    self._black_king_pos = p2
+
+            previous_king_pos = self._white_king_pos if self._white_turn else self._black_king_pos
 
             # Important to store last move info for en passant
+            print("white turn? ", self._white_turn)
             if self._white_turn:
                 # Check for check
                 movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
                 for movement in movements:
                     print(f"source pos: {movement[1]}")
+                    print(f"dest pos: ", self._black_king_pos)
                     in_check_cons = self._piece_fn_map[src_piece](movement[1], self._black_king_pos)
                     print("in check consequences: ", in_check_cons)
                     captures = filter(lambda item: item[0] is not None and item[1] is None, in_check_cons)
@@ -90,7 +105,7 @@ class ChessEngine:
                     print("len(list(captures)): ", len(captures))
                     if len(captures) > 0:
                         print("check")
-                        consequences.append((None,None))
+                        check = True
                 
                 self._last_white_move = consequences
             else:
@@ -98,6 +113,7 @@ class ChessEngine:
                 movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
                 for movement in movements:
                     print(f"source pos: {movement[1]}")
+                    print(f"dest pos: ", self._white_king_pos)
                     in_check_cons = self._piece_fn_map[src_piece](movement[1], self._white_king_pos)
                     print("in check consequences: ", in_check_cons)
                     captures = filter(lambda item: item[0] is not None and item[1] is None, in_check_cons)
@@ -106,9 +122,28 @@ class ChessEngine:
                     print("len(list(captures)): ", len(captures))
                     if len(captures) > 0:
                         print("check")
-                        consequences.append((None,None))
+                        check = True
 
                 self._last_black_move = consequences
+
+            print("check?", check)
+
+            if check:
+                consequences.append((None,None))
+
+            # If opponent in check
+            if check:
+                print("Got here")
+                if self.checkmate(consequences):
+                    check_mate = True
+                # else:
+                #     consequences.append((None, None))
+
+            if consequences == []:
+                if self._white_turn:
+                    self._white_king_pos = previous_king_pos
+                else:
+                    self._black_king_pos = previous_king_pos
 
         if self.jeopardizes_king(consequences):
             consequences = []
@@ -118,7 +153,7 @@ class ChessEngine:
 
         print("consequences: ", consequences)
 
-        return consequences
+        return consequences, check_mate
 
     def pawn_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
         # Four special pawn mechanics:
@@ -409,7 +444,6 @@ class ChessEngine:
 
         return consequences
 
-
     def straight_is_obstructed(self, p1n: str, p1l: str, p2n: str, p2l: str) -> bool:
         p1num, p2num, = ord(p1n), ord(p2n)
         p1char, p2char = ord(p1l), ord(p2l)
@@ -450,10 +484,6 @@ class ChessEngine:
         stop_row = p2num if start_row == p1num else p1num
 
         row_pos = stop_row - start_row > 0
-        print("row_diff, ", row_diff)
-        print("start_row, ", chr(start_row))
-        print("stop_row, ", chr(stop_row))
-        print("start_col, ", chr(start_col))
         for i in range(1,abs(row_diff)):
             if row_pos:
                 row_key = chr(start_row + i)
@@ -535,8 +565,6 @@ class ChessEngine:
         cols = self._chess_board.cols
         for num in rows:
             for letter in cols:
-                if num == '5' and letter == 'a':
-                    print("got here")
                 piece = self._chess_board.board[num][letter]
                 if piece != Piece.EMPTY:
                     # If it's white's turn
@@ -568,6 +596,47 @@ class ChessEngine:
             self.make_move(movement[1], movement[0])
 
         return jeopardizes_king
+
+    def checkmate(self, consequences):
+        checkmate = True
+        hypothetical_cons = copy.deepcopy(consequences)
+        
+        if self._white_turn:
+            kp_num, kp_letter = self._chess_board.unpack_move_string(self._black_king_pos)
+        else:
+            kp_num, kp_letter = self._chess_board.unpack_move_string(self._white_king_pos)
+        
+        possible_moves = []
+        for i in [-1,0,1]:
+            for j in [-1,0,1]:
+                kn_ord, kl_ord = ord(kp_num), ord(kp_letter)
+                if kn_ord+i >= ord('1') and kn_ord+i <= ord('8'):
+                    if kl_ord+j >= ord('a') and kl_ord+j <= ord('h'):
+                        print("Proposed king move: ", chr(kl_ord+j), chr(kn_ord+i))
+                        mv_num, mv_letter = chr(kn_ord+i), chr(kl_ord+j)
+                        hyp_move = ''.join((mv_letter, mv_num))
+                        #self._white_turn = not self._white_turn
+                        piece = self._chess_board.board[kp_num][kp_letter]
+                        #self._white_turn = not self._white_turn
+                        if self._white_turn:
+                            p1 = self._black_king_pos
+                        else:
+                            p1 = self._white_king_pos
+                        self._white_turn = not self._white_turn
+                        move_cons = self._piece_fn_map[piece](p1, hyp_move)
+                        self._white_turn = not self._white_turn
+                        if move_cons != []:
+                            possible_moves.append((p1, hyp_move))
+        print("possible moves: ", possible_moves)
+        for move in possible_moves:
+            hypothetical_cons.append(move)
+            print("before: ", hypothetical_cons)
+            if not self.jeopardizes_king(hypothetical_cons):
+                checkmate = False
+            print("after: ", hypothetical_cons)
+            hypothetical_cons.pop()
+
+        return checkmate
 
     def remove_piece(self, pos: str) -> None:
         """Remove piece at specified position from game board.
@@ -622,7 +691,7 @@ class ChessGame:
 
         while not is_valid:
             pos1, pos2 = self._frontend.player_turn(self._white_turn)
-            consequences = self._backend.move_implications(pos1, pos2, self._white_turn)
+            consequences, checkmate = self._backend.move_implications(pos1, pos2, self._white_turn)
 
             # If the number of consequences is nonzero, then valid move.
             is_valid = len(consequences) != 0
@@ -659,10 +728,14 @@ class ChessGame:
             # TODO: Clean this up; figure out what right thing to do is when in check.
             #       could maybe pass check in as an arg to make move. Then if not moving
             #       king out of check or eliminating threat, move invalid.
-            if in_check:
-                self._frontend.notify_check(self._white_turn)
+            if not checkmate:
+                if in_check:
+                    self._frontend.notify_check(self._white_turn)
 
-            self._frontend.display_state()
+                self._frontend.display_state()
             # print(self._captured_pieces)
 
-        self._white_turn = not self._white_turn
+        if not checkmate:
+            self._white_turn = not self._white_turn
+
+        return checkmate, self._white_turn

@@ -17,3 +17,5 @@ Chess, but awesome :smirk:
     - Detect if in check after other player's turn :white_check_mark:
     - Make moves jeopardizing king invalid :white_check_mark:
     - If no move exists that keeps the king safe, then checkmate
+
+- Need to test/fix checkmate
