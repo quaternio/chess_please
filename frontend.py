@@ -1,4 +1,6 @@
+from curses import setupterm
 from operator import is_
+from sys import settrace
 from pieces import UnicodePieces, Piece
 from typing import Tuple
 
@@ -13,6 +15,10 @@ class ChessBoard:
     @property
     def board(self):
         return self._board
+
+    @board.setter
+    def board(self, new_board):
+        self._board = new_board
 
     @property
     def rows(self):
@@ -74,6 +80,20 @@ class ChessBoard:
         if not self._has_moved[p1c1][p1c2]:
             self._has_moved[p1c1][p1c2] = True
 
+    def hypothetical_move_piece(self, pos1: str, pos2: str) -> None:
+        """Change the board's state as specified. Only use this
+        if chess board's original state is saved first. Meant for
+        hypothetical mutations.
+
+        Args:
+            pos1 (str): Position of piece to be moved
+            pos2 (str): Destination of piece to be moved
+        """
+        p1c1, p1c2 = self.unpack_move_string(pos1)
+        p2c1, p2c2 = self.unpack_move_string(pos2)
+        self._board[p2c1][p2c2] = self._board[p1c1][p1c2]
+        self._board[p1c1][p1c2] = Piece.EMPTY
+
     def remove_piece(self, pos: str) -> None:
         """Removes a piece from the game board.
 
@@ -108,6 +128,10 @@ class ChessBoard:
         pc1, pc2 = self.unpack_move_string(pos)
         return self._has_moved[pc1][pc2]
 
+    def piece_at(self, pos: str) -> Piece:
+        r_idx, c_idx = self.unpack_move_string(pos)
+        return self._board[r_idx][c_idx]
+
     def unpack_move_string(self, pos: str) -> Tuple[str,str]:
         idxs = list(pos)
         return idxs[1], idxs[0]
@@ -138,6 +162,8 @@ class ChessFEUnicode(ChessFE):
         pretty_pieces = UnicodePieces()
         self._piece_to_unicode = pretty_pieces.unicode_pieces
 
+        self._move_sequence = ['b2,c1','e5,f5','c1,b2','e8,e5','b2,c1','f8,e8','c1,b2','e8,g8','f5,g4','h3,f3','g4,f5','h5,h3','f1,c4','g4,f4','f6,h6','d1,d2','f8,d6','h3,g4','c5,h5','g4,h3','c6,c5','f5,g4','e7,f6','f4,f5','h6,g4','f3,f4','e5,d4','e3,f3','h4,e7','e2,e3','c3,c6','f3,e2','c6,c3','b2,b3','g8,h6','e2,e4','a6,c6','b1,a3','a8,a6','e3,f3','a7,a5','d2,e3','d8,h4','e1,d2','e7,e5','d2,d4']
+
     def display_state(self):
         if self._state is not None:
             rows = ['1', '2', '3', '4', '5', '6', '7', '8']
@@ -164,7 +190,10 @@ class ChessFEUnicode(ChessFE):
 
     def player_turn(self, is_white_turn):
         player = "Player 1" if is_white_turn else "Player 2"
-        move = input(f"{player}, it's your move.\n")
+        if len(self._move_sequence) == 0:
+            move = input(f"{player}, it's your move.\n")
+        else:
+            move = self._move_sequence.pop()
         positions = [pos.strip() for pos in move.split(',')]
         pos1 = positions[0]
         pos2 = positions[1]
