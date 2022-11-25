@@ -7,6 +7,6 @@ A chess engine implementation with an ASCII frontend.
 
 Valid moves are of the form ```[a-hA-H][1-8],[a-hA-H][1-8]``` (for example, ```a2,a4```).
 
-If a player wishes to concede, he can simply type, ```concede```. If both players wish to exit, just type, ```exit```. 
+If a player wishes to concede, he can simply type ```concede```. If both players wish to exit, just type ```exit```. 
 
-Simple as that.
+It's as simple as that!
