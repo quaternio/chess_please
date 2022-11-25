@@ -1,20 +1,6 @@
 from chess import Player, ChessGame
 import time
 
-def flirt_init_sequence():
-    p1_name = input("Player 1, what's your name?\n")
-    print("Wow...")
-    time.sleep(1)
-    print("That's a weird name...\n")
-    time.sleep(0.75)
-    p2_name = input("Player 2, what' your name?\n")
-    print("Now that on the other hand...")
-    time.sleep(1)
-    print("is a beautiful name!\n")
-    time.sleep(0.75)
-
-    return p1_name, p2_name
-
 def init_sequence():
     p1_name = input("\nPlayer 1, what's your name?\n")
     p2_name = input("\nPlayer 2, what' your name?\n")
