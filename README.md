@@ -13,6 +13,7 @@ Chess, but awesome :smirk:
 - Validate piece colors during moves :white_check_mark:
 - Eliminate ability to move empty piece :white_check_mark:
 - Gracefully handle invalid move strings
+- Cleanup
 - Determine check/check-mate mechanics :white_check_mark:
     - Detect if in check after other player's turn :white_check_mark:
     - Make moves jeopardizing king invalid :white_check_mark:

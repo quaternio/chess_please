@@ -3,6 +3,7 @@ from operator import is_
 from sys import settrace
 from pieces import UnicodePieces, Piece
 from typing import Tuple
+import re
 
 
 class ChessBoard:
@@ -162,7 +163,8 @@ class ChessFEUnicode(ChessFE):
         pretty_pieces = UnicodePieces()
         self._piece_to_unicode = pretty_pieces.unicode_pieces
 
-        self._move_sequence = ['b2,c1','e5,f5','c1,b2','e8,e5','b2,c1','f8,e8','c1,b2','e8,g8','f5,g4','h3,f3','g4,f5','h5,h3','f1,c4','g4,f4','f6,h6','d1,d2','f8,d6','h3,g4','c5,h5','g4,h3','c6,c5','f5,g4','e7,f6','f4,f5','h6,g4','f3,f4','e5,d4','e3,f3','h4,e7','e2,e3','c3,c6','f3,e2','c6,c3','b2,b3','g8,h6','e2,e4','a6,c6','b1,a3','a8,a6','e3,f3','a7,a5','d2,e3','d8,h4','e1,d2','e7,e5','d2,d4']
+        #self._move_sequence = ['f2,f3','e7,e5','g2,g4','e8,h4']#['b2,c1','e5,f5','c1,b2','e8,e5','b2,c1','f8,e8','c1,b2','e8,g8','f5,g4','h3,f3','g4,f5','h5,h3','f1,c4','g4,f4','f6,h6','d1,d2','f8,d6','h3,g4','c5,h5','g4,h3','c6,c5','f5,g4','e7,f6','f4,f5','h6,g4','f3,f4','e5,d4','e3,f3','h4,e7','e2,e3','c3,c6','f3,e2','c6,c3','b2,b3','g8,h6','e2,e4','a6,c6','b1,a3','a8,a6','e3,f3','a7,a5','d2,e3','d8,h4','e1,d2','e7,e5','d2,d4']
+        self._move_sequence = [] #['g2,g4','e7,e5','f2,f3']
 
     def display_state(self):
         if self._state is not None:
@@ -194,11 +196,26 @@ class ChessFEUnicode(ChessFE):
             move = input(f"{player}, it's your move.\n")
         else:
             move = self._move_sequence.pop()
-        positions = [pos.strip() for pos in move.split(',')]
-        pos1 = positions[0]
-        pos2 = positions[1]
+        
+        end_game = False
+        concede = False
+        if move in {'quit', 'Quit', 'exit', 'Exit'}:
+            end_game = True
+        elif move in {'concede', 'Concede', 'resign', 'Resign'}:
+            concede = True
 
-        return pos1, pos2
+        exp = re.compile('[a-hA-H][1-8],[a-hA-H][1-8]')
+        match = re.match(exp, move)
+        is_valid_input = match is not None
+        if is_valid_input:
+            positions = [pos.strip() for pos in move.split(',')]
+            pos1 = positions[0]
+            pos2 = positions[1]
+        else:
+            pos1 = None
+            pos2 = None
+
+        return pos1, pos2, is_valid_input, end_game, concede
 
     def _promotion_str_to_piece(self, p_str, is_white_turn):
         b_map = {'r': Piece.BROOK, 

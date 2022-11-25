@@ -54,17 +54,6 @@ class ChessEngine:
         """
         consequences = []
         self._white_turn = white_turn
-        # check_mate = False
-        
-        # Only check for checkmate if in check now
-        # check_for_checkmate = self._white_turn and self._white_in_check
-        # check_for_checkmate |= not self._white_turn and self._black_in_check
-        # if check_for_checkmate:
-        # print("h5 ", self._chess_board.board['5']['h'])
-        # print("h6 ", self._chess_board.board['6']['h'])
-        # check_mate = self.checkmate()
-        # if check_mate:
-        #     return [(None, None)], True
 
         p1num, p1letter = self._chess_board.unpack_move_string(p1)
         p2num, p2letter = self._chess_board.unpack_move_string(p2)
@@ -136,17 +125,10 @@ class ChessEngine:
                     self._white_in_check = False
 
         # Checks to see if our move jeopardizes OUR king
-        print('consequences before jeop our king: ', consequences)
         if self.jeopardizes_our_king(consequences):
             consequences = []
-        print('consequences after jeop our king: ', consequences)
 
-        # print(self._last_white_move)
-        # print(self._last_black_move)
-
-        # print("checkmate? ", check_mate)
-
-        return consequences #, check_mate
+        return consequences
 
     def pawn_move_implications(self, p1: str, p2: str) -> List[Tuple[str,str]]:
         # Four special pawn mechanics:
@@ -373,7 +355,6 @@ class ChessEngine:
         row_diff = abs(ord(p1num) - ord(p2num))
         col_diff = abs(ord(p1letter) - ord(p2letter))
 
-        castling = False
         if col_diff == 2:
             castling_conseq = self.castling_consequences(p1, p2)
             consequences = castling_conseq
@@ -402,12 +383,11 @@ class ChessEngine:
         p1num, p1letter = self._chess_board.unpack_move_string(p1)
         p2num, p2letter = self._chess_board.unpack_move_string(p2)
 
-        castling = False
         consequences = []
 
         king_in_initial = not self._chess_board.has_moved(p1)
         if king_in_initial:
-            if ord(p1letter) < ord(p2letter): # (King is castling right)
+            if ord(p1letter) < ord(p2letter):
                 if self._white_turn:
                     rook_pos = 'h1'
                     rook_in_initial = not self._chess_board.has_moved(rook_pos)
@@ -422,7 +402,7 @@ class ChessEngine:
                     if rook_in_initial and not path_obstructed:
                         consequences.append((p1, p2))
                         consequences.append(('h8', 'f8'))
-            else: # (King is castling left)
+            else:
                 if self._white_turn:
                     rook_pos = 'a1'
                     rook_in_initial = not self._chess_board.has_moved(rook_pos)
@@ -547,7 +527,7 @@ class ChessEngine:
 
         return captured_piece
 
-    def jeopardizes_other_king(self, consequences):
+    def jeopardizes_other_king(self, consequences: List[Tuple[str, str]]) -> bool:
         initial_consequences = copy.deepcopy(consequences)
         jeopardizes_king = False
         movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
@@ -590,7 +570,7 @@ class ChessEngine:
         assert consequences == initial_consequences
         return jeopardizes_king
 
-    def jeopardizes_our_king(self, consequences):
+    def jeopardizes_our_king(self, consequences: List[Tuple[str, str]]) -> bool:
         initial_consequences = copy.deepcopy(consequences)
         jeopardizes_king = False
         movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
@@ -644,7 +624,7 @@ class ChessEngine:
         assert consequences == initial_consequences
         return jeopardizes_king
 
-    def move_jeopardizes_our_king(self, move, white_turn):
+    def move_jeopardizes_our_king(self, move: str, white_turn: bool) -> bool:
         jeopardizes_king = False
         orig_board_state = copy.deepcopy(self._chess_board.board)
 
@@ -658,10 +638,6 @@ class ChessEngine:
             else:
                 king_pos = self._black_king_pos
 
-        # Execute move (Note, these should be validated first)
-        # print("move: ", move)
-        # TODO: Figure out how to make these movements non-destructive (i.e. need a way to restore pieces that are replaced)
-        # IDEA: Could copy board state before
         self.make_hypothetical_move(move[0], move[1])
 
         # Make checks
@@ -687,12 +663,11 @@ class ChessEngine:
                             jeopardizes_king = True
 
         # Undo move
-        #self.make_move(move[1], move[0])
         self._chess_board.board = orig_board_state
 
         return jeopardizes_king
 
-    def checkmate(self, white_turn): #, consequences):
+    def checkmate(self, white_turn: bool) -> bool:
         # This should be checked at the beginning of a turn for a player's own king
         checkmate = True
         
@@ -730,7 +705,6 @@ class ChessEngine:
         for move in possible_moves:
             # If king is jeopardized in every possible move, then checkmate
             king_jeopardized  = self.move_jeopardizes_our_king(move, white_turn)
-            # print("king jeopardized? ", king_jeopardized)
             if not king_jeopardized:
                 checkmate = False
 
@@ -797,56 +771,62 @@ class ChessGame:
         is_valid = False
 
         while not is_valid:
-            pos1, pos2 = self._frontend.player_turn(self._white_turn)
-            consequences = self._backend.move_implications(pos1, pos2, self._white_turn)
+            pos1, pos2, is_valid_input, end_game, concede = self._frontend.player_turn(self._white_turn)
+            
+            if end_game or concede:
+                break
 
-            # If the number of consequences is nonzero, then valid move.
-            is_valid = len(consequences) != 0
+            if is_valid_input:
+                consequences = self._backend.move_implications(pos1, pos2, self._white_turn)
 
-            if not is_valid:
+                # If the number of consequences is nonzero, then valid move.
+                is_valid = len(consequences) != 0
+
+            if not is_valid_input or not is_valid:
                 self._frontend.display_state()
                 print("Move invalid, please try again\n")
         
-        if is_valid:
-            # In chess, there can only ever be one capture in a move, 
-            # but this just allows us to be more general...
-            captures  = filter(lambda item: item[0] is not None and item[1] is None, consequences)
-            movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
-            promotions = filter(lambda item: item[0] is None and item[1] is not None, consequences)
-            check = list(filter(lambda item: item[0] is None and item[1] is None, consequences))
-            in_check = len(check) > 0
+        if not end_game and not concede:
+            if is_valid:
+                # In chess, there can only ever be one capture in a move, 
+                # but this just allows us to be more general...
+                captures  = filter(lambda item: item[0] is not None and item[1] is None, consequences)
+                movements = filter(lambda item: item[0] is not None and item[1] is not None, consequences)
+                promotions = filter(lambda item: item[0] is None and item[1] is not None, consequences)
+                check = list(filter(lambda item: item[0] is None and item[1] is None, consequences))
+                in_check = len(check) > 0
 
-            # We apply captures before making moves.
-            for capture in captures:
-                col, row = list(capture[0])
-                self._captured_pieces.append(self._backend.game_state.board[row][col])
-                self._backend.remove_piece(capture[0])
+                # We apply captures before making moves.
+                for capture in captures:
+                    col, row = list(capture[0])
+                    self._captured_pieces.append(self._backend.game_state.board[row][col])
+                    self._backend.remove_piece(capture[0])
 
-            # Update internal state after command is verified. Note that 
-            # when castling is applied, multiple moves are required in a 
-            # single turn.
-            for positions in movements:
-                self._backend.make_move(positions[0], positions[1])
+                # Update internal state after command is verified. Note that 
+                # when castling is applied, multiple moves are required in a 
+                # single turn.
+                for positions in movements:
+                    self._backend.make_move(positions[0], positions[1])
 
-            for promotion in promotions:
-                updated_piece = self._frontend.promotion(self._white_turn)
-                self._backend.promote(promotion[1], updated_piece)
+                for promotion in promotions:
+                    updated_piece = self._frontend.promotion(self._white_turn)
+                    self._backend.promote(promotion[1], updated_piece)
 
-            # TODO: Clean this up; figure out what right thing to do is when in check.
-            #       could maybe pass check in as an arg to make move. Then if not moving
-            #       king out of check or eliminating threat, move invalid.
-            # if not checkmate:
-            if in_check:
-                self._frontend.notify_check(self._white_turn)
+                if in_check:
+                    self._frontend.notify_check(self._white_turn)
 
-            self._frontend.display_state()
-            # print(self._captured_pieces)
+                self._frontend.display_state()
 
-        self._white_turn = not self._white_turn
-
-        checkmate = self._backend.checkmate(self._white_turn)
-
-        if checkmate:
             self._white_turn = not self._white_turn
 
-        return checkmate, self._white_turn
+            checkmate = self._backend.checkmate(self._white_turn)
+
+            if checkmate:
+                self._white_turn = not self._white_turn
+        
+        else:
+            checkmate = False
+            if concede:
+                self._white_turn = not self._white_turn
+
+        return checkmate, self._white_turn, end_game, concede
