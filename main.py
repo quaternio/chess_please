@@ -27,9 +27,6 @@ def main():
 
     game = ChessGame(p1, p2)
 
-    # Prompts player 1 (white) to move
-    # and displays the updated board
-
     checkmate = False
     while not checkmate:
         checkmate, is_white_turn, end_game, concede = game.move()
