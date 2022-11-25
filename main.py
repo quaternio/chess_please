@@ -1,4 +1,4 @@
-from chess import Player, ChessGame
+from lib.chess import Player, ChessGame
 import time
 
 def init_sequence():
