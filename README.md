@@ -1,5 +1,5 @@
 # chess_please
-Chess, but awesome :smirk:
+Chess... wonderful unicode chess!
 
 A chess engine implementation with an ASCII frontend.
 
@@ -10,3 +10,5 @@ Valid moves are of the form ```[a-hA-H][1-8],[a-hA-H][1-8]``` (for example, ```a
 If a player wishes to concede, he can simply type ```concede```. If both players wish to exit, just type ```exit```. 
 
 It's as simple as that!
+
+Check out the source code [here](https://github.com/tnoel20/chess_please)!
