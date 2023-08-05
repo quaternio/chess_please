@@ -163,8 +163,40 @@ class ChessFEUnicode(ChessFE):
         pretty_pieces = UnicodePieces()
         self._piece_to_unicode = pretty_pieces.unicode_pieces
 
-        #self._move_sequence = ['f2,f3','e7,e5','g2,g4','e8,h4']#['b2,c1','e5,f5','c1,b2','e8,e5','b2,c1','f8,e8','c1,b2','e8,g8','f5,g4','h3,f3','g4,f5','h5,h3','f1,c4','g4,f4','f6,h6','d1,d2','f8,d6','h3,g4','c5,h5','g4,h3','c6,c5','f5,g4','e7,f6','f4,f5','h6,g4','f3,f4','e5,d4','e3,f3','h4,e7','e2,e3','c3,c6','f3,e2','c6,c3','b2,b3','g8,h6','e2,e4','a6,c6','b1,a3','a8,a6','e3,f3','a7,a5','d2,e3','d8,h4','e1,d2','e7,e5','d2,d4']
-        self._move_sequence = [] #['g2,g4','e7,e5','f2,f3']
+        # Degenerate case of castling when path is threatened
+        # self._move_sequence = list(reversed(['d2,d4','d7,d5',
+        #                        'c2,c4','d5,c4',
+        #                        'e2,e4','c8,g4',
+        #                        'd1,d2','b8,a6',
+        #                        'd2,d3','a6,b8',
+        #                        'c1,h6','b8,a6',
+        #                        'b1,a3','a6,b8',
+        #                        'e1,c1']))
+
+        # Degenerate case of castling when king is threatened
+        # self._move_sequence = list(reversed(['d2,d4','d7,d5',
+        #                                      'c2,c4','d5,c4',
+        #                                      'e2,e4','c8,g4',
+        #                                      'd1,d2','b8,a6',
+        #                                      'd2,d3','a6,b8',
+        #                                      'c1,h6','b8,a6',
+        #                                      'b1,a3','a6,b8',
+        #                                      'f2,f3','d8,d6',
+        #                                      'e4,e5','d6,e5',
+        #                                      'e1,c1']))
+        
+        # Degenerate case where black can't castle, but should be able to
+        self._move_sequence = list(reversed(['d2,d4','d7,d5',
+                               'c2,c4','d5,c4',
+                               'e2,e4','c8,g4',
+                               'd1,d2','b8,a6',
+                               'd2,d3','a6,b8',
+                               'c1,h6','b8,a6',
+                               'b1,a3','a6,b8',
+                               'e1,c1','f2,f3',
+                               'b8,a6','h2,h3',
+                               'd8,d7','h3,h4',
+                               'e8,c8']))
 
     def display_state(self):
         if self._state is not None:

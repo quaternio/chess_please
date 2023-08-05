@@ -392,14 +392,16 @@ class ChessEngine:
                     rook_pos = 'h1'
                     rook_in_initial = not self._chess_board.has_moved(rook_pos)
                     path_obstructed = self.straight_is_obstructed(p1num, p1letter, '1', 'h')
-                    if rook_in_initial and not path_obstructed:
+                    path_threatened = self.straight_is_threatened(p1num, p1letter, '1', 'h')
+                    if rook_in_initial and not path_obstructed and not path_threatened:
                         consequences.append((p1, p2))
                         consequences.append(('h1', 'f1'))
                 else:
                     rook_pos = 'h8'
                     rook_in_initial = not self._chess_board.has_moved(rook_pos)
                     path_obstructed = self.straight_is_obstructed(p1num, p1letter, '8', 'h')
-                    if rook_in_initial and not path_obstructed:
+                    path_threatened = self.straight_is_threatened(p1num, p1letter, '8', 'h')
+                    if rook_in_initial and not path_obstructed and not path_threatened:
                         consequences.append((p1, p2))
                         consequences.append(('h8', 'f8'))
             else:
@@ -407,14 +409,16 @@ class ChessEngine:
                     rook_pos = 'a1'
                     rook_in_initial = not self._chess_board.has_moved(rook_pos)
                     path_obstructed = self.straight_is_obstructed(p1num, p1letter, '1', 'a')
-                    if rook_in_initial and not path_obstructed:
+                    path_threatened = self.straight_is_threatened(p1num, p1letter, '1', 'a')
+                    if rook_in_initial and not path_obstructed and not path_threatened:
                         consequences.append((p1, p2))
                         consequences.append(('a1', 'd1'))
                 else:
                     rook_pos = 'a8'
                     rook_in_initial = not self._chess_board.has_moved(rook_pos)
                     path_obstructed = self.straight_is_obstructed(p1num, p1letter, '8', 'a')
-                    if rook_in_initial and not path_obstructed:
+                    path_threatened = self.straight_is_threatened(p1num, p1letter, '8', 'a')
+                    if rook_in_initial and not path_obstructed and not path_threatened:
                         consequences.append((p1, p2))
                         consequences.append(('a8', 'd8'))
 
@@ -446,6 +450,151 @@ class ChessEngine:
                     obstructed = True
 
         return obstructed
+
+    def straight_is_threatened(self, p1n: str, p1l: str, p2n: str, p2l: str) -> bool:
+        ''' 
+        Checks if straight is threatened on any square 
+
+        Note that check is inclusive (i.e. edge tiles are checked) and that 
+        p1 and p2 need not be valid moves, just 2 positions that share a row
+        or a column
+        '''
+        p1num, p2num, = ord(p1n), ord(p2n)
+        p1char, p2char = ord(p1l), ord(p2l)
+
+        threatened = False
+
+        same_row = p1num == p2num
+        same_col = p1char == p2char 
+
+        # Grab all tiles in straight, occupied or not
+        tiles = []
+        if same_row or same_col:
+            if same_row:
+                for char_code in range(min(p1char, p2char), max(p1char, p2char)+1): 
+                    tiles.append(f'{chr(char_code)}{chr(p1num)}')
+            else:
+                for num_code in range(min(p1num, p2num), max(p1num, p2num)+1):
+                    tiles.append(f'{chr(p1char)}{char_code}')
+
+        for tile in tiles:
+            threatened |= self.tile_is_threatened(tile)
+
+        return threatened
+
+     
+    def tile_is_threatened(self, tile: str) -> bool:
+        '''
+        Determines if a tile is currently threatened. Note that this is
+        different from checking if a piece is threatened... looking at
+        you, en passant.
+        ''' 
+        tile_num, tile_letter = self._chess_board.unpack_move_string(tile)
+        num_ord = ord(tile_num)
+        letter_ord = ord(tile_letter)
+
+        threatened = False
+        
+        if self._white_turn:
+            
+            if self._white_in_check:
+                if self._chess_board.board[tile_num][tile_letter] == Piece.WKING:
+                    threatened = True
+
+            # Iterate over each tile on board and check if the piece is 
+            # threatening the tile in question
+            for n in self._chess_board.rows:
+                if threatened:
+                    break
+
+                for l in self._chess_board.cols:
+                    if threatened:
+                        break
+
+                    piece = self._chess_board.board[n][l]
+
+                    # If enemy piece, then see if it's threatening
+                    if piece not in self._white and piece != Piece.EMPTY:
+                        piece_pos = self._chess_board.pack_move_string(n, l)
+                        
+                        # Check if valid move
+                        move_cons = self._piece_fn_map[piece](piece_pos, tile)
+                        
+                        if len(move_cons) != 0:
+                            captures  = list(filter(lambda item: item[0] is not None 
+                                                            and item[1] is None, move_cons))
+
+                            movements = list(filter(lambda item: item[0] is not None 
+                                                            and item[1] is not None, move_cons))
+
+                            promotions = list(filter(lambda item: item[0] is None 
+                                                            and item[1] is not None, move_cons))
+
+                            check = list(filter(lambda item: item[0] is None 
+                                                            and item[1] is None, move_cons))
+                           
+                            if len(captures) == 0 and len(movements) == 1:
+                                mv_n, mv_l = self._chess_board.unpack_move_string(movements[0][0])
+                                
+                                # Check for special case of pawn moving forward 
+                                # without capturing 
+                                if self._chess_board.board[mv_n][mv_l] != Piece.BPAWN:
+                                    threatened = True
+
+                            elif len(movements) == 1:
+                                threatened = True
+        
+        if not self._white_turn:
+            
+            if not self._white_in_check:
+                if self._chess_board.board[tile_num][tile_letter] == Piece.BKING:
+                    threatened = True
+
+            # Iterate over each tile on board and check if the piece is 
+            # threatening the tile in question
+            for n in self._chess_board.rows:
+                if threatened:
+                    break
+
+                for l in self._chess_board.cols:
+                    if threatened:
+                        break
+
+                    piece = self._chess_board.board[n][l]
+
+                    # If enemy piece, then see if it's threatening
+                    if piece in self._white and piece != Piece.EMPTY:
+                        piece_pos = self._chess_board.pack_move_string(n, l)
+                        
+                        # Check if valid move
+                        move_cons = self._piece_fn_map[piece](piece_pos, tile)
+                        
+                        if len(move_cons) != 0:
+                            captures  = list(filter(lambda item: item[0] is not None 
+                                                            and item[1] is None, move_cons))
+
+                            movements = list(filter(lambda item: item[0] is not None 
+                                                            and item[1] is not None, move_cons))
+
+                            promotions = list(filter(lambda item: item[0] is None 
+                                                            and item[1] is not None, move_cons))
+
+                            check = list(filter(lambda item: item[0] is None 
+                                                            and item[1] is None, move_cons))
+                           
+                            if len(captures) == 0 and len(movements) == 1:
+                                mv_n, mv_l = self._chess_board.unpack_move_string(movements[0][0])
+                                
+                                # Check for special case of pawn moving forward 
+                                # without capturing 
+                                if self._chess_board.board[mv_n][mv_l] != Piece.WPAWN:
+                                    threatened = True
+
+                            elif len(movements) == 1:
+                                threatened = True
+
+        # Now we know!
+        return threatened
 
     def diag_is_obstructed(self, p1n: str, p1l: str, p2n: str, p2l: str) -> bool:
         p1num, p2num, = ord(p1n), ord(p2n)
