@@ -546,7 +546,7 @@ class ChessEngine:
         
         if not self._white_turn:
             
-            if not self._white_in_check:
+            if self._black_in_check:
                 if self._chess_board.board[tile_num][tile_letter] == Piece.BKING:
                     threatened = True
 

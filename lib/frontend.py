@@ -163,40 +163,7 @@ class ChessFEUnicode(ChessFE):
         pretty_pieces = UnicodePieces()
         self._piece_to_unicode = pretty_pieces.unicode_pieces
 
-        # Degenerate case of castling when path is threatened
-        # self._move_sequence = list(reversed(['d2,d4','d7,d5',
-        #                        'c2,c4','d5,c4',
-        #                        'e2,e4','c8,g4',
-        #                        'd1,d2','b8,a6',
-        #                        'd2,d3','a6,b8',
-        #                        'c1,h6','b8,a6',
-        #                        'b1,a3','a6,b8',
-        #                        'e1,c1']))
-
-        # Degenerate case of castling when king is threatened
-        # self._move_sequence = list(reversed(['d2,d4','d7,d5',
-        #                                      'c2,c4','d5,c4',
-        #                                      'e2,e4','c8,g4',
-        #                                      'd1,d2','b8,a6',
-        #                                      'd2,d3','a6,b8',
-        #                                      'c1,h6','b8,a6',
-        #                                      'b1,a3','a6,b8',
-        #                                      'f2,f3','d8,d6',
-        #                                      'e4,e5','d6,e5',
-        #                                      'e1,c1']))
-        
-        # Degenerate case where black can't castle, but should be able to
-        self._move_sequence = list(reversed(['d2,d4','d7,d5',
-                               'c2,c4','d5,c4',
-                               'e2,e4','c8,g4',
-                               'd1,d2','b8,a6',
-                               'd2,d3','a6,b8',
-                               'c1,h6','b8,a6',
-                               'b1,a3','a6,b8',
-                               'e1,c1','f2,f3',
-                               'b8,a6','h2,h3',
-                               'd8,d7','h3,h4',
-                               'e8,c8']))
+        self._move_sequence = []
 
     def display_state(self):
         if self._state is not None:
