@@ -1,5 +1,4 @@
 # chess_please
-Chess... wonderful unicode chess!
 
 A chess engine implementation with an ASCII frontend.
 
@@ -11,4 +10,4 @@ If a player wishes to concede, he can simply type ```concede```. If both players
 
 It's as simple as that!
 
-Check out the source code [here](https://github.com/tnoel20/chess_please)!
+Check out the source code [here](https://github.com/quaternio/chess_please)!
